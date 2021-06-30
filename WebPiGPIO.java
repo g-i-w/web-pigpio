@@ -1,3 +1,4 @@
+import java.util.*;
 import paddle.*;
 
 public class WebPiGPIO {
@@ -5,7 +6,7 @@ public class WebPiGPIO {
 	private static String pigpiodServer = "localhost";
 	private static int pigpiodPort = 8888;
 
-	public void main (String[] args) {
+	public static void main (String[] args) {
 		ServerState state = new ServerStateWebPiGPIO( pigpiodServer, pigpiodPort );
 		Server gui = new ServerHTTP( state, 7000, "Web GUI for pigpiod" );
 	}
@@ -13,7 +14,7 @@ public class WebPiGPIO {
 }
 
 
-private class ServerStateWebPiGPIO extends ServerState {
+class ServerStateWebPiGPIO extends ServerState {
 
 	private String pigpiodServer;
 	private int pigpiodPort;
@@ -25,8 +26,8 @@ private class ServerStateWebPiGPIO extends ServerState {
 		log = new ArrayList<>();
 	}
 	
-	private logCommand ( String cmd ) {
-		try { // catch any concurency problem
+	private void logCommand ( String cmd ) {
+		try { // not mandatory, but to catch any multi-thread concurency problems
 			log.add( cmd );
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -36,16 +37,20 @@ private class ServerStateWebPiGPIO extends ServerState {
 	public void respond ( InboundHTTP http ) {
 		try { // try to send request to pigpiod
 		
-			String[] pigpiodParams = (new String(http.request().data())).split(",");
+			System.out.println( http.request().firstLine() );
+			String reqData = new String(http.request().data());
+			String[] pigpiodParams = reqData.split(",");
 			Bytes pigpiodBytes = new Bytes( new byte[4*pigpiodParams.length] );
 			for (int i=0; i<pigpiodParams.length; i++) {
-				pigpiodBytes.writeIntBE( pigpiodParams[i].intValue(), i*4, 4 );
+				pigpiodBytes.writeIntBE( Integer.parseInt(pigpiodParams[i]), i*4, 4 );
 			}
 			
 			if (http.request().path().toLowerCase().equals("/gpio")) {
 				String pigpiodResponse = (new OutboundTCP(
+					this,
 					pigpiodServer,
 					pigpiodPort,
+					reqData,
 					pigpiodBytes.bytes(),
 					new byte[pigpiodBytes.size()],
 					-1,
@@ -72,7 +77,7 @@ private class ServerStateWebPiGPIO extends ServerState {
 				e.printStackTrace();
 		}
 		
-    printConnection( session );
+    printConnection( http );
 	}
 
 }
