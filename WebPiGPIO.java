@@ -48,11 +48,12 @@ class ServerStateWebPiGPIO extends ServerState {
 				this,
 				pigpiodServer,
 				pigpiodPort,
-				"Sending '"+reqData+"' to pigpiod...",
-				pigpiodBytes.bytes(),
-				new byte[pigpiodBytes.size()],
-				-1,
-				true
+				//"Sending '"+reqData+"' to pigpiod...",
+				pigpiodBytes.bytes()
+				//,
+				//new byte[pigpiodBytes.size()],
+				//-1,
+				//true
 			))
 			.timeout(1000)
 			.receive()
